@@ -1,0 +1,5 @@
+rid-lib
+python-dotenv
+slack_bolt
+fastapi
+uvicorn
