@@ -1,13 +1,24 @@
 from fastapi import FastAPI, Request, Query
+from contextlib import asynccontextmanager
 from rid_lib import RID
-from .core import slack_app, slack_handler, cache
+from .core import slack_handler, cache
+from .actions import dereference
 
-server = FastAPI()
 
+@asynccontextmanager
+async def lifespan(server: FastAPI):
+    import time
+    time.sleep(10)
+    print("start")
+    yield
+    print("end")
+
+server = FastAPI(lifespan=lifespan)
 
 
 @server.post("/slack/listener")
 async def slack_listener(request: Request):
+    # handled in listener.py
     return await slack_handler.handle(request)
     
 @server.get("/resource")
@@ -17,11 +28,8 @@ async def get_resource(rid: str = Query(...)):
     data = cache.read(rid_obj)
     
     if data is None:
-        response = slack_app.client.conversations_replies(
-            channel=rid_obj.channel_id,
-            ts=rid_obj.ts
-        )
-        data = response["messages"][0]
-        cache.write(rid_obj, data)
+        data = dereference(rid_obj)
+        if data is not None:
+            cache.write(rid_obj, data)
     
     return data

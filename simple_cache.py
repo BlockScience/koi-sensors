@@ -78,6 +78,11 @@ class CacheInterface:
             json.dump(cache_entry.to_dict(), f, indent=2)
 
         return cache_entry
+    
+    def exists(self, rid: RID):
+        return os.path.exists(
+            self.file_path_to(rid)
+        )
 
     def read(self, rid: RID):
         """Reads and returns CacheObject from RID cache."""

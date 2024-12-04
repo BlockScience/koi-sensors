@@ -1,7 +1,8 @@
 import time
 from slack_sdk.errors import SlackApiError
 from rid_lib.types import SlackMessage
-from .core import slack_app, cache
+from .core import slack_app
+from . import coordinator
 
 
 def auto_retry(function, **params):
@@ -16,7 +17,7 @@ def auto_retry(function, **params):
         else:
             print("unknown error", e)
 
-def run(channel_ids=[]):
+def run(channel_ids=["C082YTFAA83"]):
     team = slack_app.client.team_info().data["team"]
     team_id = team["id"]
 
@@ -43,7 +44,8 @@ def run(channel_ids=[]):
             result = auto_retry(slack_app.client.conversations_history,
                 channel=channel_id,
                 limit=500,
-                cursor=message_cursor
+                cursor=message_cursor,
+                oldest=0
             )
             
             messages.extend(result["messages"])
@@ -57,14 +59,12 @@ def run(channel_ids=[]):
             message_rid = SlackMessage(team_id, channel_id, message["ts"])
             
             if message.get("subtype") is None:
-                cache.write(message_rid, message)
-                print(message_rid)
+                coordinator.report_obj_discovery(message_rid, message)
             
             thread_ts = message.get("thread_ts")
             
             # ignore threaded messages sent to channel (double counted within thread)
             if thread_ts and (thread_ts != message["ts"]):
-                print("🤫", message_rid)
                 continue
 
             if thread_ts:
@@ -89,7 +89,7 @@ def run(channel_ids=[]):
                 for threaded_message in threaded_messages[1:]:
                     threaded_message_rid = SlackMessage(team_id, channel_id, threaded_message["ts"])
                     if threaded_message.get("subtype") is None:
-                        cache.write(threaded_message_rid, threaded_message)
-                        print(threaded_message_rid)
-                    
-        print()
+                        coordinator.report_obj_discovery(threaded_message_rid, threaded_message)
+                        
+if __name__ == "__main__":
+    run()

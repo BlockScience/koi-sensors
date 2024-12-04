@@ -1,3 +1,7 @@
-from .core import slack_socket_mode_handler
+import uvicorn
 
-slack_socket_mode_handler.start()
+uvicorn.run(
+    "slack_sensor:server",
+    reload=True,
+    log_level="debug"
+)
