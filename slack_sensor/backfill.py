@@ -17,13 +17,14 @@ def auto_retry(function, **params):
         else:
             print("unknown error", e)
 
-def run(channel_ids=["C082YTFAA83"]):
+def run(channel_ids=["C0593RJJ2CW"]):
     team = slack_app.client.team_info().data["team"]
     team_id = team["id"]
 
     if channel_ids:
         channels = [{"id": cid} for cid in channel_ids]
-    else: channels = []
+    else: 
+        channels = []
     
     # get list of channels
     channel_cursor = None
@@ -84,6 +85,8 @@ def run(channel_ids=["C082YTFAA83"]):
                         threaded_message_cursor = result["response_metadata"]["next_cursor"]
                     else:
                         threaded_message_cursor = None
+                        
+                print(message_rid, "thread with", len(threaded_messages), "messages")
                 
                 # don't double count thread parent message
                 for threaded_message in threaded_messages[1:]:

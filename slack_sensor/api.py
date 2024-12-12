@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Request, Query
+from pydantic import BaseModel
 from contextlib import asynccontextmanager
 from rid_lib import RID
 from .core import slack_handler, cache
@@ -7,8 +8,6 @@ from .actions import dereference
 
 @asynccontextmanager
 async def lifespan(server: FastAPI):
-    import time
-    time.sleep(10)
     print("start")
     yield
     print("end")
@@ -33,3 +32,20 @@ async def get_resource(rid: str = Query(...)):
             cache.write(rid_obj, data)
     
     return data
+
+class RetrieveResources(BaseModel):
+    rids: list[str]
+
+@server.post("/resource/retrieve")
+async def post_resource_retrieve(resources: RetrieveResources):
+    return {
+        rid_str: cache.read(RID.from_string(rid_str))
+        for rid_str in resources.rids
+    }
+    
+
+@server.get("/resource/list")
+async def get_resource_list():
+    return [
+        str(rid) for rid in cache.read_all_rids()
+    ]

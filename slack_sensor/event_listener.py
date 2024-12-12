@@ -5,7 +5,7 @@ from . import coordinator
 
 
 @slack_app.event("message")
-def handle_message_event(event):
+async def handle_message_event(event):
     # with open("slack_sensor/message.json", "w") as f:
     #     json.dump(event, f, indent=2)
 
