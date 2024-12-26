@@ -23,7 +23,7 @@ async def handle_message_event(event):
         del data["event_ts"]
         del data["channel_type"]
         
-        coordinator.report_obj_discovery(message_rid, data)
+        await coordinator.handle_obj_discovery(message_rid, data)
     
     elif subtype == "message_changed":
         message_rid = SlackMessage(
@@ -36,7 +36,7 @@ async def handle_message_event(event):
         del data["source_team"]
         del data["user_team"]
         
-        coordinator.report_obj_discovery(message_rid, data)
+        await coordinator.handle_obj_discovery(message_rid, data)
     
     elif subtype == "message_deleted":
         message_rid = SlackMessage(
@@ -45,7 +45,7 @@ async def handle_message_event(event):
             ts=event["previous_message"]["ts"]
         )
                 
-        coordinator.report_deleted_obj(message_rid)
+        await coordinator.handle_obj_deletion(message_rid)
     
     else:
         print("unsupported subtype:", subtype)

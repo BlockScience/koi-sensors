@@ -1,16 +1,30 @@
+import httpx
+import json
 from fastapi import FastAPI, Request, Query
 from pydantic import BaseModel
 from contextlib import asynccontextmanager
 from rid_lib import RID
 from .core import slack_handler, cache
 from .actions import dereference
+from .config import COORDINATOR_NODE_URL, LOCAL_API_URL
 
 
 @asynccontextmanager
 async def lifespan(server: FastAPI):
-    print("start")
+    async with httpx.AsyncClient() as client:
+        resp = await client.post(
+            COORDINATOR_NODE_URL + "/sensors",
+            json={
+                "contexts": [
+                    "slack.message"
+                ],
+                "url": LOCAL_API_URL
+            }
+        )
+        data = resp.json()
+        print(json.dumps(data, indent=2))
+    
     yield
-    print("end")
 
 server = FastAPI(lifespan=lifespan)
 
@@ -20,8 +34,8 @@ async def slack_listener(request: Request):
     # handled in listener.py
     return await slack_handler.handle(request)
     
-@server.get("/resource")
-async def get_resource(rid: str = Query(...)):
+@server.get("/object")
+async def get_object(rid: str = Query(...)):
     rid_obj = RID.from_string(rid)
     
     data = cache.read(rid_obj)
@@ -33,19 +47,19 @@ async def get_resource(rid: str = Query(...)):
     
     return data
 
-class RetrieveResources(BaseModel):
+class RetrieveObjects(BaseModel):
     rids: list[str]
 
-@server.post("/resource/retrieve")
-async def post_resource_retrieve(resources: RetrieveResources):
+@server.post("/objects")
+async def post_objects(resources: RetrieveObjects):
     return {
         rid_str: cache.read(RID.from_string(rid_str))
         for rid_str in resources.rids
     }
     
 
-@server.get("/resource/list")
-async def get_resource_list():
+@server.get("/rids")
+async def get_rids():
     return [
         str(rid) for rid in cache.read_all_rids()
     ]

@@ -60,7 +60,7 @@ async def backfill_messages(channel_ids: list[str] = []):
             message_rid = SlackMessage(team_id, channel_id, message["ts"])
             
             if message.get("subtype") is None:
-                coordinator.report_obj_discovery(message_rid, message)
+                coordinator.handle_obj_discovery(message_rid, message)
             
             thread_ts = message.get("thread_ts")
             
@@ -92,7 +92,7 @@ async def backfill_messages(channel_ids: list[str] = []):
                 for threaded_message in threaded_messages[1:]:
                     threaded_message_rid = SlackMessage(team_id, channel_id, threaded_message["ts"])
                     if threaded_message.get("subtype") is None:
-                        coordinator.report_obj_discovery(threaded_message_rid, threaded_message)
+                        coordinator.handle_obj_discovery(threaded_message_rid, threaded_message)
                         
 if __name__ == "__main__":
     asyncio.run(
