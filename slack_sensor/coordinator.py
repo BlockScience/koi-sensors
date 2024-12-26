@@ -8,7 +8,7 @@ import requests
 def report_obj_discovery(rid: RID, data: dict):
     if cache.exists(rid):
         obj = cache.read(rid)
-        if obj.meta["sha256_hash"] == hash_json(data):
+        if obj.manifest.sha256_hash == hash_json(data):
             # print(rid, "[NO CHANGE]")
             ...
         else:

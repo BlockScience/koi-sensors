@@ -1,4 +1,5 @@
-rid-lib
+# rid-lib
+git+https://github.com/BlockScience/rid-lib@extensions
 python-dotenv
 slack_bolt
 fastapi
