@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Request
 from pydantic import BaseModel
-import json, uvicorn
+import json, uvicorn, httpx
+from rid_lib.ext import Event, CacheBundle
 
 server = FastAPI()
 
@@ -11,6 +12,17 @@ async def publish_event(request: Request):
     print(request.url)
     data = await request.json()
     print(json.dumps(data, indent=2))
+    
+    event = Event.from_json(data)
+    print(event)
+    
+    remote_sensor = sensors[event.rid.context]
+    
+    resp = httpx.get(remote_sensor + f"/object?rid={event.rid}")
+    
+    bundle = CacheBundle.from_json(resp.json())
+    
+    print(bundle)
     
     return "success"
 
@@ -30,7 +42,7 @@ async def register_sensor(sensor: Sensor):
 
 if __name__ == "__main__":
     uvicorn.run(
-        "test_subscriber:server",
+        "placeholder_coordinator:server",
         reload=True,
         log_level="debug",
         port=5000

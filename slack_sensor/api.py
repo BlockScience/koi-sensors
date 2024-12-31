@@ -4,6 +4,7 @@ from fastapi import FastAPI, Request, Query
 from pydantic import BaseModel
 from contextlib import asynccontextmanager
 from rid_lib import RID
+from rid_lib.ext import CacheBundle, Manifest
 from .core import slack_handler, cache
 from .actions import dereference
 from .config import COORDINATOR_NODE_URL, LOCAL_API_URL
@@ -16,7 +17,7 @@ async def lifespan(server: FastAPI):
             COORDINATOR_NODE_URL + "/sensors",
             json={
                 "contexts": [
-                    "slack.message"
+                    "orn:slack.message"
                 ],
                 "url": LOCAL_API_URL
             }
@@ -36,16 +37,22 @@ async def slack_listener(request: Request):
     
 @server.get("/object")
 async def get_object(rid: str = Query(...)):
-    rid_obj = RID.from_string(rid)
+    rid = RID.from_string(rid)
     
-    data = cache.read(rid_obj)
+    bundle = cache.read(rid)
     
-    if data is None:
-        data = dereference(rid_obj)
+    if bundle is None:
+        data = dereference(rid)
         if data is not None:
-            cache.write(rid_obj, data)
-    
-    return data
+            
+            bundle = CacheBundle(
+                Manifest.generate(rid, data),
+                data
+            )
+            
+            cache.write(rid, bundle)
+                
+    return bundle.to_json()
 
 class RetrieveObjects(BaseModel):
     rids: list[str]

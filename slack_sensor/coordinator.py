@@ -1,49 +1,51 @@
 import httpx
 from jsondiff import diff
-from rid_lib import RID, Manifest
-from rid_lib.utils import hash_json
+from rid_lib import RID
+from rid_lib.ext import Manifest, Event, EventType, CacheBundle, utils
 from .core import cache
 from .config import COORDINATOR_NODE_URL
 
 
-async def broadcast_event(rid: RID, event_type: str, manifest: Manifest | None = None):
-    event = {
-        "rid": str(rid),
-        "type": event_type
-    }
-    
-    if manifest:
-        event["manifest"] = manifest.to_dict()
-    
+async def broadcast_event(event: Event):
     async with httpx.AsyncClient() as client:
         await client.post(
             COORDINATOR_NODE_URL + "/events/publish",
-            json=event
+            json=event.to_json()
         )
     
 
 async def handle_obj_discovery(rid: RID, data: dict):
     if cache.exists(rid):
-        obj = cache.read(rid)
-        if obj.manifest.sha256_hash == hash_json(data):
+        bundle = cache.read(rid)
+        if bundle.manifest.sha256_hash == utils.sha256_hash_json(data):
             # print(rid, "[NO CHANGE]")
             ...
         else:
             print(rid, "[UPDATED]")
-            print(diff(obj.data, data))
+            print(diff(bundle.contents, data))
             
-            obj = cache.write(rid, data)
+            bundle = CacheBundle(
+                manifest=Manifest.generate(rid, data),
+                contents=data
+            )
+            cache.write(rid, bundle)
             
-            await broadcast_event(rid, "UPDATED", obj.manifest)
+            await broadcast_event(
+                Event(rid, EventType.UPDATE, bundle.manifest))
     else:
         print(rid, "[NEW]")
-        obj = cache.write(rid, data)
+        bundle = CacheBundle(
+            manifest=Manifest.generate(rid, data),
+            contents=data
+        )
+        cache.write(rid, bundle)
 
-        await broadcast_event(rid, "NEW", obj.manifest)
+        await broadcast_event(
+            Event(rid, EventType.NEW, bundle.manifest))
     
 async def handle_obj_deletion(rid: RID):
     print(rid, "[DELETED]")
     cache.delete(rid)
     
-    
-    await broadcast_event(rid, "DELETED")
+    await broadcast_event(
+        Event(rid, EventType.UPDATE))
