@@ -3,6 +3,7 @@ from slack_sdk.errors import SlackApiError
 from rid_lib.types import SlackMessage
 from .core import slack_app
 from . import coordinator
+from .config import OBSERVING_CHANNELS
 
 
 async def auto_retry(function, **params):
@@ -18,7 +19,7 @@ async def auto_retry(function, **params):
             print("unknown error", e)
             quit()
 
-async def backfill_messages(channel_ids: list[str] = []):
+async def backfill_messages(channel_ids: list[str] = [], after=0):
     resp = await slack_app.client.team_info()
     team = resp.data["team"]
     team_id = team["id"]
@@ -46,8 +47,10 @@ async def backfill_messages(channel_ids: list[str] = []):
                 channel=channel_id,
                 limit=500,
                 cursor=message_cursor,
-                oldest=0
+                oldest=after
             )
+            
+            if not result["messages"]: break
             
             messages.extend(result["messages"])
             if result["has_more"]:
@@ -93,8 +96,10 @@ async def backfill_messages(channel_ids: list[str] = []):
                     threaded_message_rid = SlackMessage(team_id, channel_id, threaded_message["ts"])
                     if threaded_message.get("subtype") is None:
                         await coordinator.handle_obj_discovery(threaded_message_rid, threaded_message)
+
+    print("done")
                         
 if __name__ == "__main__":
     asyncio.run(
         backfill_messages(
-            channel_ids=["C0593RJJ2CW"]))
+            channel_ids=OBSERVING_CHANNELS))

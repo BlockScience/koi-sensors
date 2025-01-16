@@ -2,6 +2,7 @@ import json
 from rid_lib.types import SlackMessage
 from .core import slack_app
 from . import coordinator
+from .config import OBSERVING_CHANNELS
 
 
 @slack_app.event("message")
@@ -17,6 +18,10 @@ async def handle_message_event(event):
             channel_id=event["channel"],
             ts=event["ts"]
         )
+        
+        if message_rid.channel_id not in OBSERVING_CHANNELS:
+            return
+        
         # normalize to non event message structure
         data = event
         del data["channel"]

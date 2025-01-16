@@ -9,12 +9,13 @@ from rid_lib.ext import CacheBundle, Manifest
 from .core import async_slack_handler, cache
 from .actions import dereference
 from .auth import api_key_header
-from .config import COORDINATOR_NODE_URL, COORDINATOR_API_HEADER, PUBLISHER_ID
+from .config import COORDINATOR_NODE_URL, COORDINATOR_API_HEADER, PUBLISHER_ID, LAST_PROCESSED_TS, OBSERVING_CHANNELS
 from .backfill import backfill_messages
 
 
 @asynccontextmanager
 async def lifespan(server: FastAPI):
+    print(LAST_PROCESSED_TS)
     async with httpx.AsyncClient() as client:
         resp = await client.post(
             COORDINATOR_NODE_URL + f"/profiles/publisher/{PUBLISHER_ID}",
@@ -32,7 +33,10 @@ async def lifespan(server: FastAPI):
         data = resp.json()
         print(json.dumps(data, indent=2))
     
-    asyncio.create_task(backfill_messages(channel_ids=["C0593RJJ2CW"]))
+    asyncio.create_task(
+        backfill_messages(
+            channel_ids=OBSERVING_CHANNELS,
+            after=LAST_PROCESSED_TS))
     yield
 
 server = FastAPI(lifespan=lifespan)

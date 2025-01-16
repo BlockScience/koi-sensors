@@ -1,5 +1,6 @@
 from dotenv import load_dotenv
 import os
+import json
 
 load_dotenv("slack_sensor/.env")
 
@@ -19,3 +20,32 @@ COORDINATOR_API_HEADER = {
 PUBLISHER_ID = "CDph6lHPtMOdQ4AUmVLOPA"
 
 AUTH_JSON_PATH = "auth.json"
+
+OBSERVING_CHANNELS = [
+    "C0593RJJ2CW",
+    "C082YTFAA83"
+]
+
+def load_state():
+    try:
+        with open("state.json", "r") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return {
+            "ts": 0
+        }
+
+LAST_PROCESSED_TS = load_state()["ts"]            
+
+def update_state(ts):
+    global LAST_PROCESSED_TS
+    if ts < LAST_PROCESSED_TS: return
+    
+    print("updated", LAST_PROCESSED_TS)
+    
+    with open("state.json", "w") as f:
+        json.dump({
+            "ts": ts
+        }, f)
+    LAST_PROCESSED_TS = ts
+            

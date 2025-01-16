@@ -3,7 +3,7 @@ from jsondiff import diff
 from rid_lib import RID
 from rid_lib.ext import Manifest, Event, EventType, CacheBundle, utils
 from .core import cache
-from .config import COORDINATOR_NODE_URL, PUBLISHER_ID, COORDINATOR_API_HEADER
+from .config import COORDINATOR_NODE_URL, PUBLISHER_ID, COORDINATOR_API_HEADER, update_state
 
 
 async def broadcast_event(event: Event):
@@ -16,6 +16,7 @@ async def broadcast_event(event: Event):
     
 
 async def handle_obj_discovery(rid: RID, data: dict):
+    update_state(ts=float(rid.ts))
     if cache.exists(rid):
         bundle = cache.read(rid)
         if bundle.manifest.sha256_hash == utils.sha256_hash_json(data):
