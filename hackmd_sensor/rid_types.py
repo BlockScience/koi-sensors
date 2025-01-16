@@ -12,7 +12,4 @@ class HackMDNote(ORN):
     
     @classmethod
     def from_reference(cls, reference):
-        return cls(reference)
-    
-RID.register_context(HackMDNote)
-    
+        return cls(reference)    

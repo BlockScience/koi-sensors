@@ -1,4 +1,4 @@
-from .rid_extension import HackMDNote
+from .rid_types import HackMDNote
 from . import hackmd_api
 
 def dereference(note: HackMDNote):

@@ -1,3 +1,3 @@
-from simple_cache import CacheInterface
+from rid_lib.ext import Cache
 
-cache = CacheInterface("hackmd_sensor/cache")
+cache = Cache("hackmd_sensor/cache")
