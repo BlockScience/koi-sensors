@@ -57,7 +57,7 @@ async def get_object(rid: str = Query(...)):
     bundle = cache.read(rid)
     
     if bundle is None:
-        data = dereference(rid)
+        data = await dereference(rid)
         if data is not None:
             
             bundle = CacheBundle(

@@ -3,9 +3,9 @@ from slack_sdk.errors import SlackApiError
 from .core import slack_app
 
 
-def dereference(message: SlackMessage):
+async def dereference(message: SlackMessage):
     try:
-        response = slack_app.client.conversations_replies(
+        response = await slack_app.client.conversations_replies(
             channel=message.channel_id,
             ts=message.ts
         )
