@@ -3,14 +3,15 @@ from jsondiff import diff
 from rid_lib import RID
 from rid_lib.ext import Manifest, Event, EventType, CacheBundle, utils
 from .core import cache
-from .config import COORDINATOR_NODE_URL
+from .config import COORDINATOR_NODE_URL, PUBLISHER_ID, COORDINATOR_API_HEADER
 
 
 async def broadcast_event(event: Event):
     async with httpx.AsyncClient() as client:
         await client.post(
-            COORDINATOR_NODE_URL + "/events/publish",
-            json=event.to_json()
+            COORDINATOR_NODE_URL + "/events/publish/" + PUBLISHER_ID,
+            headers=COORDINATOR_API_HEADER,
+            json=[event.to_json()]
         )
     
 

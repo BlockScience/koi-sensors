@@ -7,19 +7,23 @@ from rid_lib import RID
 from rid_lib.ext import CacheBundle, Manifest
 from .core import slack_handler, cache
 from .actions import dereference
-from .config import COORDINATOR_NODE_URL, LOCAL_API_URL
+from .config import COORDINATOR_NODE_URL, COORDINATOR_API_HEADER, PUBLISHER_ID
 
 
 @asynccontextmanager
 async def lifespan(server: FastAPI):
     async with httpx.AsyncClient() as client:
         resp = await client.post(
-            COORDINATOR_NODE_URL + "/sensors",
+            COORDINATOR_NODE_URL + f"/profiles/publisher/{PUBLISHER_ID}",
+            headers=COORDINATOR_API_HEADER,
             json={
                 "contexts": [
-                    "orn:slack.message"
+                    "orn:slack.message",
+                    "orn:slack.user",
+                    "orn:slack.workspace",
+                    "orn:slack.channel"
                 ],
-                "url": LOCAL_API_URL
+                "url": "https://koi-dev.lukvmil.com/slack_sensor"
             }
         )
         data = resp.json()

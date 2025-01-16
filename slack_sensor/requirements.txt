@@ -1,7 +1,8 @@
-# rid-lib
-git+https://github.com/BlockScience/rid-lib@extensions
+rid-lib
 python-dotenv
 slack_bolt
+aiohttp
+jsondiff
 fastapi
 uvicorn
 httpx
