@@ -1,12 +1,13 @@
 import httpx
 import json
-from fastapi import FastAPI, Request, Query
+from fastapi import FastAPI, Request, Query, Depends, APIRouter
 from pydantic import BaseModel
 from contextlib import asynccontextmanager
 from rid_lib import RID
 from rid_lib.ext import CacheBundle, Manifest
-from .core import slack_handler, cache
+from .core import async_slack_handler, cache
 from .actions import dereference
+from .auth import api_key_header
 from .config import COORDINATOR_NODE_URL, COORDINATOR_API_HEADER, PUBLISHER_ID
 
 
@@ -33,13 +34,18 @@ async def lifespan(server: FastAPI):
 
 server = FastAPI(lifespan=lifespan)
 
+router = APIRouter(
+    dependencies=[Depends(api_key_header)]
+)
+
+server.include_router(router)
 
 @server.post("/slack/listener")
 async def slack_listener(request: Request):
     # handled in listener.py
-    return await slack_handler.handle(request)
+    return await async_slack_handler.handle(request)
     
-@server.get("/object")
+@router.get("/object")
 async def get_object(rid: str = Query(...)):
     rid = RID.from_string(rid)
     
@@ -61,7 +67,7 @@ async def get_object(rid: str = Query(...)):
 class RetrieveObjects(BaseModel):
     rids: list[str]
 
-@server.post("/objects")
+@router.post("/objects")
 async def post_objects(resources: RetrieveObjects):
     return {
         rid_str: cache.read(RID.from_string(rid_str))
@@ -69,7 +75,7 @@ async def post_objects(resources: RetrieveObjects):
     }
     
 
-@server.get("/rids")
+@router.get("/rids")
 async def get_rids():
     return [
         str(rid) for rid in cache.read_all_rids()
