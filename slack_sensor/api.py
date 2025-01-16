@@ -1,5 +1,6 @@
 import httpx
 import json
+import asyncio
 from fastapi import FastAPI, Request, Query, Depends, APIRouter
 from pydantic import BaseModel
 from contextlib import asynccontextmanager
@@ -9,6 +10,7 @@ from .core import async_slack_handler, cache
 from .actions import dereference
 from .auth import api_key_header
 from .config import COORDINATOR_NODE_URL, COORDINATOR_API_HEADER, PUBLISHER_ID
+from .backfill import backfill_messages
 
 
 @asynccontextmanager
@@ -30,6 +32,7 @@ async def lifespan(server: FastAPI):
         data = resp.json()
         print(json.dumps(data, indent=2))
     
+    asyncio.create_task(backfill_messages(channel_ids=["C0593RJJ2CW"]))
     yield
 
 server = FastAPI(lifespan=lifespan)
@@ -37,8 +40,6 @@ server = FastAPI(lifespan=lifespan)
 router = APIRouter(
     dependencies=[Depends(api_key_header)]
 )
-
-server.include_router(router)
 
 @server.post("/slack/listener")
 async def slack_listener(request: Request):
@@ -80,3 +81,5 @@ async def get_rids():
     return [
         str(rid) for rid in cache.read_all_rids()
     ]
+    
+server.include_router(router)

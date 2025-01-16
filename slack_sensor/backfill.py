@@ -12,7 +12,7 @@ async def auto_retry(function, **params):
         if e.response["error"] == "ratelimited":
             retry_after = int(e.response.headers["Retry-After"])
             print(f"timed out, waiting {retry_after} seconds")
-            time.sleep(retry_after)
+            await asyncio.sleep(retry_after)
             return await function(**params)
         else:
             print("unknown error", e)
@@ -60,7 +60,7 @@ async def backfill_messages(channel_ids: list[str] = []):
             message_rid = SlackMessage(team_id, channel_id, message["ts"])
             
             if message.get("subtype") is None:
-                coordinator.handle_obj_discovery(message_rid, message)
+                await coordinator.handle_obj_discovery(message_rid, message)
             
             thread_ts = message.get("thread_ts")
             
@@ -92,7 +92,7 @@ async def backfill_messages(channel_ids: list[str] = []):
                 for threaded_message in threaded_messages[1:]:
                     threaded_message_rid = SlackMessage(team_id, channel_id, threaded_message["ts"])
                     if threaded_message.get("subtype") is None:
-                        coordinator.handle_obj_discovery(threaded_message_rid, threaded_message)
+                        await coordinator.handle_obj_discovery(threaded_message_rid, threaded_message)
                         
 if __name__ == "__main__":
     asyncio.run(
