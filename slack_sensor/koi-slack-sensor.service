@@ -1,0 +1,11 @@
+[Unit]
+Description=KOI Slack Sensor Node Service
+After=network.target
+
+[Service]
+WorkingDirectory=/root/koi-sensors
+ExecStart=/root/koi-sensors/venv/bin/python -m slack_sensor
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
